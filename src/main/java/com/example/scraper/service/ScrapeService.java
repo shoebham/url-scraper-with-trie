@@ -1,6 +1,7 @@
 package com.example.scraper.service;
 
 import com.example.scraper.model.ScrapeRequest;
+import com.example.scraper.model.ScrapeResponse;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -12,9 +13,11 @@ import com.example.scraper.utils.Trie;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @Service
 public class ScrapeService {
@@ -23,31 +26,35 @@ public class ScrapeService {
     private Trie trie;
     Logger logger = LoggerFactory.getLogger(ScrapeService.class);
 
-    @Async
-    public CompletableFuture<String> scrape(ScrapeRequest scrapeRequest) throws IOException {
+    public ScrapeResponse scrape(ScrapeRequest scrapeRequest) throws IOException {
         logger.info("Scrape Request: {} ", scrapeRequest);
         String jobId = UUID.randomUUID().toString();
         List<String> urls = scrapeRequest.getUrls();
         List<String> keywords = scrapeRequest.getKeywords();
-        try {
-            for (String url : urls) {
-                Document doc = Jsoup.connect(url)
-                        .userAgent("Mozilla/5.0")
-                        .timeout(5000)
-                        .get();
+        ZonedDateTime scheduledAt = scrapeRequest.getSchedule();
 
-                String content = doc.text();
+        CompletableFuture.runAsync(() -> {
+            try {
+                for (String url : urls) {
+                    Document doc = Jsoup.connect(url)
+                            .userAgent("Mozilla/5.0")
+                            .timeout(5000)
+                            .get();
 
-                for (String keyword : keywords) {
-                    if (content.toLowerCase().contains(keyword.toLowerCase())) {
-                        trie.insert(keyword, url,content);
+                    String content = doc.text();
+
+                    for (String keyword : keywords) {
+                        if (content.toLowerCase().contains(keyword.toLowerCase())) {
+                            trie.insert(keyword, url, content);
+                        }
                     }
                 }
-                logger.info("Results:{}",trie.search("ind",5));
+            } catch (IOException e) {
+                logger.error("Error during scraping: ", e);
+                throw new CompletionException(e);
             }
-            return CompletableFuture.completedFuture(jobId);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to scrape websites", e);
-        }
+        });
+
+        return new ScrapeResponse(jobId, scheduledAt);
     }
 }

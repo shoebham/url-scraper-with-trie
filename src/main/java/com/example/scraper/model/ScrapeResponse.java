@@ -9,9 +9,9 @@ public class ScrapeResponse {
     private String jobId;
     private ZonedDateTime scheduledAt;
 
-    public ScrapeResponse(String status, String message, String jobId, ZonedDateTime scheduledAt) {
-        this.status = status;
-        this.message = message;
+    public ScrapeResponse( String jobId, ZonedDateTime scheduledAt) {
+        this.status = "success";
+        this.message = "Scraping initiated successfully.";
         this.jobId = jobId;
         this.scheduledAt = scheduledAt;
     }
