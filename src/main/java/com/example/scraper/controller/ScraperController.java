@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+
 @RequestMapping("/api/v1")
 @RestController
 public class ScraperController {
@@ -23,7 +25,7 @@ public class ScraperController {
 
 
     @PostMapping("/scrape")
-    private void scrape(@RequestBody  ScrapeRequest scrapeRequest){
+    private void scrape(@RequestBody  ScrapeRequest scrapeRequest) throws IOException {
         scrapeService.scrape(scrapeRequest);
     }
 
